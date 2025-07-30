@@ -8,16 +8,22 @@
   ],
   "routes": [
     {
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "app.py"
     }
   ],
   "env": {
-    "PYTHONPATH": "."
+    "PYTHONPATH": ".",
+    "FLASK_ENV": "production"
   },
   "functions": {
     "app.py": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "memory": 512
     }
   }
 } 

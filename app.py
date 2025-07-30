@@ -122,6 +122,9 @@ def internal_error(e):
     """서버 내부 오류"""
     return render_template('500.html'), 500
 
+# Vercel용 WSGI 애플리케이션 객체
+application = app
+
 if __name__ == '__main__':
     # 개발 환경에서만 실행
     app.run(debug=True, host='0.0.0.0', port=5000) 
