@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import List, Dict, Optional
 import os
 
-# 환경 변수 확인 후 조건부 import
+# ?�경 변???�인 ??조건부 import
 try:
     import cloudinary
     import cloudinary.uploader
@@ -13,14 +13,14 @@ try:
 except ImportError:
     CLOUDINARY_AVAILABLE = False
     SUPABASE_AVAILABLE = False
-    print("⚠️ cloudinary 또는 supabase 패키지가 설치되지 않았습니다.")
+    print("?�️ cloudinary ?�는 supabase ?�키지가 ?�치?��? ?�았?�니??")
 
 class CloudinaryStorage:
-    """Cloudinary를 사용한 JSON 파일 저장"""
+    """Cloudinary�??�용??JSON ?�일 ?�??""
     
     def __init__(self):
         if not CLOUDINARY_AVAILABLE:
-            print("⚠️ Cloudinary를 사용할 수 없습니다.")
+            print("?�️ Cloudinary�??�용?????�습?�다.")
             return
             
         try:
@@ -30,12 +30,12 @@ class CloudinaryStorage:
                 api_secret=os.getenv('CLOUDINARY_API_SECRET')
             )
         except Exception as e:
-            print(f"⚠️ Cloudinary 설정 오류: {e}")
+            print(f"?�️ Cloudinary ?�정 ?�류: {e}")
     
     def upload_json(self, data: Dict, filename: str) -> Dict:
-        """JSON 데이터를 Cloudinary에 업로드"""
+        """JSON ?�이?��? Cloudinary???�로??""
         if not CLOUDINARY_AVAILABLE:
-            print("⚠️ Cloudinary를 사용할 수 없습니다.")
+            print("?�️ Cloudinary�??�용?????�습?�다.")
             return {"public_id": "local_test", "secure_url": "local://test"}
             
         try:
@@ -48,26 +48,26 @@ class CloudinaryStorage:
             )
             return result
         except Exception as e:
-            print(f"Cloudinary 업로드 오류: {e}")
+            print(f"Cloudinary ?�로???�류: {e}")
             return {"public_id": "error", "secure_url": "error://test"}
     
     def download_json(self, public_id: str) -> Optional[Dict]:
-        """Cloudinary에서 JSON 데이터 다운로드"""
+        """Cloudinary?�서 JSON ?�이???�운로드"""
         try:
             result = cloudinary.api.resource(public_id, resource_type="raw")
             download_url = result['secure_url']
-            # 실제로는 requests를 사용해서 다운로드해야 함
+            # ?�제로는 requests�??�용?�서 ?�운로드?�야 ??
             return {"download_url": download_url}
         except Exception as e:
-            print(f"Cloudinary 다운로드 오류: {e}")
+            print(f"Cloudinary ?�운로드 ?�류: {e}")
             return None
 
 class SupabaseStorage:
-    """Supabase를 사용한 분석용 데이터베이스"""
+    """Supabase�??�용??분석???�이?�베?�스"""
     
     def __init__(self):
         if not SUPABASE_AVAILABLE:
-            print("⚠️ Supabase를 사용할 수 없습니다.")
+            print("?�️ Supabase�??�용?????�습?�다.")
             self.supabase = None
             return
             
@@ -77,31 +77,31 @@ class SupabaseStorage:
                 os.getenv('SUPABASE_ANON_KEY')
             )
         except Exception as e:
-            print(f"⚠️ Supabase 설정 오류: {e}")
+            print(f"?�️ Supabase ?�정 ?�류: {e}")
             self.supabase = None
     
     def init_database(self):
-        """데이터베이스 초기화 (테이블 생성)"""
+        """?�이?�베?�스 초기??(?�이�??�성)"""
         if not self.supabase:
-            print("⚠️ Supabase를 사용할 수 없습니다.")
+            print("?�️ Supabase�??�용?????�습?�다.")
             return
             
-        # Supabase에서는 SQL 에디터에서 직접 테이블 생성
-        # 여기서는 테이블 존재 여부만 확인
+        # Supabase?�서??SQL ?�디?�에??직접 ?�이�??�성
+        # ?�기?�는 ?�이�?존재 ?��?�??�인
         try:
             self.supabase.table('messages').select('id').limit(1).execute()
-            print("✅ Supabase 테이블 확인 완료")
+            print("??Supabase ?�이�??�인 ?�료")
         except Exception as e:
-            print(f"⚠️ Supabase 테이블 확인 실패: {e}")
+            print(f"?�️ Supabase ?�이�??�인 ?�패: {e}")
     
     def save_messages(self, messages: List[Dict]) -> bool:
-        """메시지들을 Supabase에 저장"""
+        """메시지?�을 Supabase???�??""
         if not self.supabase:
-            print("⚠️ Supabase를 사용할 수 없습니다. 메시지 저장을 건너뜁니다.")
+            print("?�️ Supabase�??�용?????�습?�다. 메시지 ?�?�을 건너?�니??")
             return True
             
         try:
-            # 배치로 저장 (성능 최적화)
+            # 배치�??�??(?�능 최적??
             batch_size = 100
             for i in range(0, len(messages), batch_size):
                 batch = messages[i:i + batch_size]
@@ -118,16 +118,16 @@ class SupabaseStorage:
                 
                 self.supabase.table('messages').insert(data_to_insert).execute()
             
-            print(f"✅ {len(messages)}개 메시지 저장 완료")
+            print(f"??{len(messages)}�?메시지 ?�???�료")
             return True
         except Exception as e:
-            print(f"❌ Supabase 저장 오류: {e}")
+            print(f"??Supabase ?�???�류: {e}")
             return False
     
     def search_messages(self, keyword: str = None, nickname: str = None, limit: int = 100) -> List[Dict]:
-        """Supabase에서 메시지 검색"""
+        """Supabase?�서 메시지 검??""
         if not self.supabase:
-            print("⚠️ Supabase를 사용할 수 없습니다. 빈 결과를 반환합니다.")
+            print("?�️ Supabase�??�용?????�습?�다. �?결과�?반환?�니??")
             return []
             
         try:
@@ -143,37 +143,37 @@ class SupabaseStorage:
             
             return result.data
         except Exception as e:
-            print(f"❌ Supabase 검색 오류: {e}")
+            print(f"??Supabase 검???�류: {e}")
             return []
     
     def get_user_statistics(self) -> List[Dict]:
-        """사용자별 통계 정보"""
+        """?�용?�별 ?�계 ?�보"""
         if not self.supabase:
-            print("⚠️ Supabase를 사용할 수 없습니다. 빈 통계를 반환합니다.")
+            print("?�️ Supabase�??�용?????�습?�다. �??�계�?반환?�니??")
             return []
             
         try:
             result = self.supabase.rpc('get_user_statistics').execute()
             return result.data
         except Exception as e:
-            print(f"❌ 사용자 통계 조회 오류: {e}")
+            print(f"???�용???�계 조회 ?�류: {e}")
             return []
     
     def get_keyword_frequency(self, limit: int = 20) -> List[Dict]:
-        """키워드 빈도 분석"""
+        """?�워??빈도 분석"""
         if not self.supabase:
-            print("⚠️ Supabase를 사용할 수 없습니다. 빈 키워드 통계를 반환합니다.")
+            print("?�️ Supabase�??�용?????�습?�다. �??�워???�계�?반환?�니??")
             return []
             
         try:
             result = self.supabase.rpc('get_keyword_frequency', {'limit_count': limit}).execute()
             return result.data
         except Exception as e:
-            print(f"❌ 키워드 빈도 조회 오류: {e}")
+            print(f"???�워??빈도 조회 ?�류: {e}")
             return []
 
 class HybridStorage:
-    """하이브리드 저장소: Cloudinary + Supabase"""
+    """?�이브리???�?�소: Cloudinary + Supabase"""
     
     def __init__(self):
         self.cloudinary = CloudinaryStorage()
@@ -181,26 +181,26 @@ class HybridStorage:
         self.supabase.init_database()
     
     def process_upload(self, file_content: str, filename: str = None) -> Dict:
-        """파일 업로드 처리"""
+        """?�일 ?�로??처리"""
         try:
-            # 1. 파싱 (기존 파서 사용)
+            # 1. ?�싱 (기존 ?�서 ?�용)
             from kakao_parser import KakaoTalkParser
-            parser = KakaoTalkParser()
+            # �ӽ� ������ ���� ����� �ļ� �ʱ�ȭ
             
-            # 임시 파일로 저장 후 파싱
+            # ?�시 ?�일�??�?????�싱
             temp_filename = f"temp_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
             with open(temp_filename, 'w', encoding='utf-8') as f:
                 f.write(file_content)
             
-            messages = parser.parse_messages(temp_filename)
+            parser = KakaoTalkParser(temp_filename)\r\n            messages = parser.parse_messages()
             
-            # 임시 파일 삭제
+            # ?�시 ?�일 ??��
             os.remove(temp_filename)
             
-            # 2. JSON으로 Cloudinary에 저장 (백업용)
+            # 2. JSON?�로 Cloudinary???�??(백업??
             json_data = {
                 "room_info": {
-                    "name": "카카오톡 대화내용",
+                    "name": "카카?�톡 ?�?�내??,
                     "export_date": datetime.now().strftime('%Y-%m-%d'),
                     "filename": filename or "unknown.txt",
                     "total_messages": len(messages)
@@ -212,7 +212,7 @@ class HybridStorage:
             cloudinary_filename = f"chat_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
             cloudinary_result = self.cloudinary.upload_json(json_data, cloudinary_filename)
             
-            # 3. 분석용 데이터를 Supabase에 저장
+            # 3. 분석???�이?��? Supabase???�??
             supabase_success = self.supabase.save_messages(messages)
             
             return {
@@ -224,22 +224,22 @@ class HybridStorage:
             }
             
         except Exception as e:
-            print(f"❌ 업로드 처리 오류: {e}")
+            print(f"???�로??처리 ?�류: {e}")
             return {
                 "success": False,
                 "error": str(e)
             }
     
     def search(self, keyword: str = None, nickname: str = None, limit: int = 100) -> List[Dict]:
-        """Supabase에서 빠른 검색"""
+        """Supabase?�서 빠른 검??""
         return self.supabase.search_messages(keyword, nickname, limit)
     
     def get_backup(self, cloudinary_id: str) -> Optional[Dict]:
-        """Cloudinary에서 원본 데이터 복원"""
+        """Cloudinary?�서 ?�본 ?�이??복원"""
         return self.cloudinary.download_json(cloudinary_id)
     
     def get_statistics(self) -> Dict:
-        """전체 통계 정보"""
+        """?�체 ?�계 ?�보"""
         try:
             user_stats = self.supabase.get_user_statistics()
             keyword_stats = self.supabase.get_keyword_frequency()
@@ -249,12 +249,12 @@ class HybridStorage:
                 "keyword_frequency": keyword_stats
             }
         except Exception as e:
-            print(f"❌ 통계 조회 오류: {e}")
+            print(f"???�계 조회 ?�류: {e}")
             return {}
 
-# 테스트 코드
+# ?�스??코드
 if __name__ == "__main__":
-    # 환경변수 설정 (실제로는 .env 파일 사용)
+    # ?�경변???�정 (?�제로는 .env ?�일 ?�용)
     os.environ['CLOUDINARY_CLOUD_NAME'] = 'your_cloud_name'
     os.environ['CLOUDINARY_API_KEY'] = 'your_api_key'
     os.environ['CLOUDINARY_API_SECRET'] = 'your_api_secret'
@@ -262,4 +262,4 @@ if __name__ == "__main__":
     os.environ['SUPABASE_ANON_KEY'] = 'your_anon_key'
     
     storage = HybridStorage()
-    print("✅ 하이브리드 저장소 초기화 완료") 
+    print("???�이브리???�?�소 초기???�료") 
