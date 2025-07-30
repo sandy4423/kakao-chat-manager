@@ -2,7 +2,13 @@ import sqlite3
 import re
 from datetime import datetime
 from typing import List, Dict, Optional
-import jieba  # 한국어 형태소 분석 (설치 필요: pip install jieba)
+# 조건부 import for jieba
+try:
+    import jieba  # 한국어 형태소 분석
+    JIEBA_AVAILABLE = True
+except ImportError:
+    JIEBA_AVAILABLE = False
+    print("⚠️ jieba 패키지가 설치되지 않았습니다. 형태소 분석 기능이 제한됩니다.")
 
 class KakaoTalkDatabase:
     def __init__(self, db_path: str = "kakao_chat.db"):

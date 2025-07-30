@@ -79,12 +79,12 @@ def api_search():
 
 @app.route('/statistics')
 def statistics():
-    """통계 페이지"""
+    """통계 API - JSON 형태로 반환"""
     try:
         stats = storage.get_statistics()
-        return render_template('statistics.html', stats=stats)
+        return jsonify(stats)
     except Exception as e:
-        return render_template('statistics.html', stats={}, error=str(e))
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/statistics')
 def api_statistics():
@@ -115,12 +115,12 @@ def too_large(e):
 @app.errorhandler(404)
 def not_found(e):
     """페이지를 찾을 수 없음"""
-    return render_template('404.html'), 404
+    return jsonify({'error': '페이지를 찾을 수 없습니다.'}), 404
 
 @app.errorhandler(500)
 def internal_error(e):
     """서버 내부 오류"""
-    return render_template('500.html'), 500
+    return jsonify({'error': '서버 내부 오류가 발생했습니다.'}), 500
 
 # Vercel용 WSGI 애플리케이션 객체
 application = app
