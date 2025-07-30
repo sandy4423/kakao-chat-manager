@@ -2,14 +2,6 @@
 Flask==2.3.3
 Werkzeug==2.3.7
 
-# Database and Storage
-supabase==2.0.2
-cloudinary==1.35.0
-
-# Data Processing
-pandas==2.1.1
-jieba==0.42.1
-
 # HTTP Requests
 requests==2.31.0
 
@@ -26,4 +18,12 @@ ujson==5.8.0
 python-dotenv==1.0.0
 
 # Optional: For better performance
-gunicorn==21.2.0 
+gunicorn==21.2.0
+
+# Optional: Database and Storage (설치 실패해도 앱은 작동)
+# supabase==2.0.2
+# cloudinary==1.35.0
+
+# Optional: Data Processing (설치 실패해도 앱은 작동)
+# pandas==2.1.1
+# jieba==0.42.1 

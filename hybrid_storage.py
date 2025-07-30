@@ -1,23 +1,43 @@
 import json
-import cloudinary
-import cloudinary.uploader
 from datetime import datetime
 from typing import List, Dict, Optional
-from supabase import create_client, Client
 import os
+
+# 환경 변수 확인 후 조건부 import
+try:
+    import cloudinary
+    import cloudinary.uploader
+    from supabase import create_client, Client
+    CLOUDINARY_AVAILABLE = True
+    SUPABASE_AVAILABLE = True
+except ImportError:
+    CLOUDINARY_AVAILABLE = False
+    SUPABASE_AVAILABLE = False
+    print("⚠️ cloudinary 또는 supabase 패키지가 설치되지 않았습니다.")
 
 class CloudinaryStorage:
     """Cloudinary를 사용한 JSON 파일 저장"""
     
     def __init__(self):
-        cloudinary.config(
-            cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
-            api_key=os.getenv('CLOUDINARY_API_KEY'),
-            api_secret=os.getenv('CLOUDINARY_API_SECRET')
-        )
+        if not CLOUDINARY_AVAILABLE:
+            print("⚠️ Cloudinary를 사용할 수 없습니다.")
+            return
+            
+        try:
+            cloudinary.config(
+                cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
+                api_key=os.getenv('CLOUDINARY_API_KEY'),
+                api_secret=os.getenv('CLOUDINARY_API_SECRET')
+            )
+        except Exception as e:
+            print(f"⚠️ Cloudinary 설정 오류: {e}")
     
     def upload_json(self, data: Dict, filename: str) -> Dict:
         """JSON 데이터를 Cloudinary에 업로드"""
+        if not CLOUDINARY_AVAILABLE:
+            print("⚠️ Cloudinary를 사용할 수 없습니다.")
+            return {"public_id": "local_test", "secure_url": "local://test"}
+            
         try:
             json_string = json.dumps(data, ensure_ascii=False, indent=2)
             result = cloudinary.uploader.upload(
@@ -29,7 +49,7 @@ class CloudinaryStorage:
             return result
         except Exception as e:
             print(f"Cloudinary 업로드 오류: {e}")
-            return None
+            return {"public_id": "error", "secure_url": "error://test"}
     
     def download_json(self, public_id: str) -> Optional[Dict]:
         """Cloudinary에서 JSON 데이터 다운로드"""
@@ -46,13 +66,26 @@ class SupabaseStorage:
     """Supabase를 사용한 분석용 데이터베이스"""
     
     def __init__(self):
-        self.supabase: Client = create_client(
-            os.getenv('SUPABASE_URL'),
-            os.getenv('SUPABASE_ANON_KEY')
-        )
+        if not SUPABASE_AVAILABLE:
+            print("⚠️ Supabase를 사용할 수 없습니다.")
+            self.supabase = None
+            return
+            
+        try:
+            self.supabase: Client = create_client(
+                os.getenv('SUPABASE_URL'),
+                os.getenv('SUPABASE_ANON_KEY')
+            )
+        except Exception as e:
+            print(f"⚠️ Supabase 설정 오류: {e}")
+            self.supabase = None
     
     def init_database(self):
         """데이터베이스 초기화 (테이블 생성)"""
+        if not self.supabase:
+            print("⚠️ Supabase를 사용할 수 없습니다.")
+            return
+            
         # Supabase에서는 SQL 에디터에서 직접 테이블 생성
         # 여기서는 테이블 존재 여부만 확인
         try:
@@ -63,6 +96,10 @@ class SupabaseStorage:
     
     def save_messages(self, messages: List[Dict]) -> bool:
         """메시지들을 Supabase에 저장"""
+        if not self.supabase:
+            print("⚠️ Supabase를 사용할 수 없습니다. 메시지 저장을 건너뜁니다.")
+            return True
+            
         try:
             # 배치로 저장 (성능 최적화)
             batch_size = 100
@@ -89,6 +126,10 @@ class SupabaseStorage:
     
     def search_messages(self, keyword: str = None, nickname: str = None, limit: int = 100) -> List[Dict]:
         """Supabase에서 메시지 검색"""
+        if not self.supabase:
+            print("⚠️ Supabase를 사용할 수 없습니다. 빈 결과를 반환합니다.")
+            return []
+            
         try:
             query = self.supabase.table('messages').select('*')
             
@@ -107,6 +148,10 @@ class SupabaseStorage:
     
     def get_user_statistics(self) -> List[Dict]:
         """사용자별 통계 정보"""
+        if not self.supabase:
+            print("⚠️ Supabase를 사용할 수 없습니다. 빈 통계를 반환합니다.")
+            return []
+            
         try:
             result = self.supabase.rpc('get_user_statistics').execute()
             return result.data
@@ -116,6 +161,10 @@ class SupabaseStorage:
     
     def get_keyword_frequency(self, limit: int = 20) -> List[Dict]:
         """키워드 빈도 분석"""
+        if not self.supabase:
+            print("⚠️ Supabase를 사용할 수 없습니다. 빈 키워드 통계를 반환합니다.")
+            return []
+            
         try:
             result = self.supabase.rpc('get_keyword_frequency', {'limit_count': limit}).execute()
             return result.data
