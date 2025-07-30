@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}파일 업로드 - 카카오톡 대화 분석기{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Upload Card -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-upload"></i> 카카오톡 대화내용 업로드
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Upload Instructions -->
+                <div class="alert alert-info">
+                    <h6><i class="bi bi-info-circle"></i> 업로드 방법</h6>
+                    <ol class="mb-0">
+                        <li>카카오톡에서 대화내용 내보내기 (.txt 파일)</li>
+                        <li>아래 영역에 파일을 드래그하거나 클릭하여 선택</li>
+                        <li>파일이 자동으로 파싱되어 저장됩니다</li>
+                    </ol>
+                </div>
+
+                <!-- Upload Area -->
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-content">
+                        <i class="bi bi-cloud-upload display-1 text-primary"></i>
+                        <h4>파일을 여기에 드래그하세요</h4>
+                        <p class="text-muted">또는 클릭하여 파일 선택</p>
+                        <input type="file" id="fileInput" accept=".txt" style="display: none;">
+                        <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                            <i class="bi bi-folder2-open"></i> 파일 선택
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="progress mt-3" id="progressBar" style="display: none;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         role="progressbar" style="width: 0%"></div>
+                </div>
+
+                <!-- Upload Status -->
+                <div id="uploadStatus" class="mt-3"></div>
+            </div>
+        </div>
+
+        <!-- Upload History -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-clock-history"></i> 최근 업로드
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="uploadHistory">
+                    <p class="text-muted text-center">업로드 기록이 없습니다.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.upload-area {
+    border: 2px dashed #dee2e6;
+    border-radius: 10px;
+    padding: 40px;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.upload-area:hover {
+    border-color: #007bff;
+    background-color: #f8f9fa;
+}
+
+.upload-area.dragover {
+    border-color: #007bff;
+    background-color: #e3f2fd;
+}
+
+.upload-content {
+    pointer-events: none;
+}
+
+.upload-content button {
+    pointer-events: auto;
+}
+
+.progress {
+    height: 25px;
+    border-radius: 15px;
+}
+
+.upload-status {
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 15px;
+}
+
+.upload-status.success {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.upload-status.error {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+.upload-status.info {
+    background-color: #d1ecf1;
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    const uploadArea = $('#uploadArea');
+    const fileInput = $('#fileInput');
+    const progressBar = $('#progressBar');
+    const progressBarInner = $('.progress-bar');
+    const uploadStatus = $('#uploadStatus');
+
+    // Drag and Drop Events
+    uploadArea.on('dragover', function(e) {
+        e.preventDefault();
+        $(this).addClass('dragover');
+    });
+
+    uploadArea.on('dragleave', function(e) {
+        e.preventDefault();
+        $(this).removeClass('dragover');
+    });
+
+    uploadArea.on('drop', function(e) {
+        e.preventDefault();
+        $(this).removeClass('dragover');
+        
+        const files = e.originalEvent.dataTransfer.files;
+        if (files.length > 0) {
+            handleFile(files[0]);
+        }
+    });
+
+    // File Input Change
+    fileInput.on('change', function(e) {
+        if (e.target.files.length > 0) {
+            handleFile(e.target.files[0]);
+        }
+    });
+
+    function handleFile(file) {
+        // 파일 타입 확인
+        if (!file.name.endsWith('.txt')) {
+            showStatus('❌ .txt 파일만 업로드 가능합니다.', 'error');
+            return;
+        }
+
+        // 파일 크기 확인 (16MB)
+        if (file.size > 16 * 1024 * 1024) {
+            showStatus('❌ 파일 크기가 너무 큽니다. (최대 16MB)', 'error');
+            return;
+        }
+
+        // 업로드 시작
+        uploadFile(file);
+    }
+
+    function uploadFile(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // UI 업데이트
+        showStatus('📤 파일을 업로드하고 있습니다...', 'info');
+        progressBar.show();
+        progressBarInner.css('width', '0%').text('0%');
+
+        $.ajax({
+            url: '/upload',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            xhr: function() {
+                const xhr = new window.XMLHttpRequest();
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const percentComplete = (e.loaded / e.total) * 100;
+                        progressBarInner.css('width', percentComplete + '%').text(Math.round(percentComplete) + '%');
+                    }
+                });
+                return xhr;
+            },
+            success: function(response) {
+                if (response.success) {
+                    showStatus(response.message, 'success');
+                    
+                    // 통계 정보 표시
+                    if (response.statistics) {
+                        const stats = response.statistics;
+                        const statsHtml = `
+                            <div class="row mt-3">
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <h5 class="text-primary">${stats.total_messages}</h5>
+                                        <small>총 메시지</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <h5 class="text-success">${stats.unique_users}</h5>
+                                        <small>고유 사용자</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <h5 class="text-info">${stats.total_joins}</h5>
+                                        <small>총 입장</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <h5 class="text-warning">${stats.total_leaves}</h5>
+                                        <small>총 퇴장</small>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        uploadStatus.append(statsHtml);
+                    }
+                } else {
+                    showStatus('❌ ' + response.error, 'error');
+                }
+            },
+            error: function(xhr) {
+                let errorMsg = '❌ 업로드 중 오류가 발생했습니다.';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMsg = '❌ ' + xhr.responseJSON.error;
+                }
+                showStatus(errorMsg, 'error');
+            },
+            complete: function() {
+                progressBar.hide();
+                fileInput.val(''); // 파일 입력 초기화
+            }
+        });
+    }
+
+    function showStatus(message, type) {
+        uploadStatus.html(`<div class="upload-status ${type}">${message}</div>`);
+    }
+});
+</script>
+{% endblock %} 
